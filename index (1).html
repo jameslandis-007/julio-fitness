@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Julio Fitness</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; padding-bottom: 70px; }
+        .header { background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: white; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 10; }
+        .header h1 { font-size: 1.4rem; font-weight: 600; }
+        .header .date { font-size: 0.85rem; opacity: 0.9; margin-top: 2px; }
+        .header .week-indicator { font-size: 0.75rem; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 10px; display: inline-block; margin-top: 6px; }
+        .container { padding: 12px; max-width: 500px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: #2d5a27; }
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .stat-box { background: white; border-radius: 10px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .stat-value { font-size: 1.6rem; font-weight: 700; color: #2d5a27; }
+        .stat-label { font-size: 0.7rem; color: #666; margin-top: 2px; }
+        .session-toggle { display: flex; background: #e8e8e8; border-radius: 8px; padding: 3px; margin-bottom: 12px; }
+        .session-btn { flex: 1; padding: 10px 8px; border: none; background: transparent; border-radius: 6px; font-size: 0.9rem; cursor: pointer; }
+        .session-btn.active { background: #2d5a27; color: white; }
+        .exercise { border-bottom: 1px solid #eee; padding: 12px 0; }
+        .exercise:last-child { border-bottom: none; }
+        .exercise-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+        .exercise-name-row { display: flex; align-items: center; gap: 6px; flex: 1; }
+        .exercise-name { font-weight: 500; font-size: 0.95rem; }
+        .info-btn { width: 20px; height: 20px; border-radius: 50%; background: #e3f2fd; border: none; color: #1976d2; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .exercise-sets { font-size: 0.8rem; color: #666; text-align: right; margin-left: 8px; }
+        .exercise-last { font-size: 0.75rem; color: #2d5a27; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; margin-bottom: 8px; display: inline-block; }
+        .exercise-inputs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .input-group { display: flex; align-items: center; gap: 4px; }
+        .exercise-inputs input { width: 60px; padding: 10px 6px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; text-align: center; }
+        .exercise-inputs input:focus { outline: none; border-color: #2d5a27; }
+        .exercise-inputs label { font-size: 0.75rem; color: #888; }
+        .exercise-complete { width: 32px; height: 32px; border: 2px solid #2d5a27; border-radius: 50%; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; }
+        .exercise-complete.done { background: #2d5a27; color: white; }
+        .exercise-complete.done::after { content: '✓'; font-size: 1rem; }
+        .finish-btn { width: 100%; padding: 14px; background: #2d5a27; color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .finish-btn:active { background: #1e3d1a; }
+        .rest-day { text-align: center; padding: 30px 20px; }
+        .rest-day-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .rest-day h2 { color: #2d5a27; margin-bottom: 8px; font-size: 1.2rem; }
+        .rest-day p { color: #666; line-height: 1.4; font-size: 0.9rem; }
+        .bike-link { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; color: #2d5a27; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 16px; padding: 20px; width: 100%; max-width: 320px; max-height: 80vh; overflow-y: auto; }
+        .modal h3 { margin-bottom: 12px; color: #2d5a27; font-size: 1.1rem; }
+        .modal p { color: #555; line-height: 1.5; font-size: 0.9rem; margin-bottom: 10px; }
+        .modal-input-group { margin-bottom: 14px; }
+        .modal-input-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
+        .modal-input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 16px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; border: none; }
+        .modal-btn.cancel { background: #e8e8e8; color: #666; }
+        .modal-btn.confirm { background: #2d5a27; color: white; }
+        .modal-btn.full { flex: none; width: 100%; }
+        .celebration { text-align: center; }
+        .celebration-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .celebration h3 { color: #2d5a27; margin-bottom: 10px; }
+        .celebration p { color: #666; line-height: 1.4; font-size: 0.9rem; white-space: pre-line; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; padding: 8px 4px 6px; text-align: center; cursor: pointer; color: #888; font-size: 0.65rem; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: #2d5a27; }
+        .nav-item-icon { font-size: 1.3rem; margin-bottom: 1px; }
+        .records-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .record-box { background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%); border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #ffe082; }
+        .record-value { font-size: 1.4rem; font-weight: 700; color: #f57c00; }
+        .record-label { font-size: 0.7rem; color: #666; margin-top: 2px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-weight: 500; font-size: 0.9rem; }
+        .history-detail { font-size: 0.8rem; color: #666; }
+        .history-status { font-size: 1.1rem; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 10px; }
+        .calendar-header { font-size: 0.65rem; color: #888; text-align: center; padding: 4px 2px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 50%; }
+        .calendar-day.completed { background: #2d5a27; color: white; }
+        .calendar-day.missed { background: #ffebee; color: #d32f2f; }
+        .calendar-day.today { border: 2px solid #2d5a27; }
+        .calendar-day.empty { visibility: hidden; }
+        .pr-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .pr-item:last-child { border-bottom: none; }
+        .pr-exercise { font-weight: 500; font-size: 0.9rem; }
+        .pr-value { font-size: 1rem; color: #2d5a27; font-weight: 600; }
+        .pr-date { font-size: 0.7rem; color: #888; }
+        .test-week-banner { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; text-align: center; }
+        .test-week-banner h3 { color: #e65100; font-size: 0.95rem; margin-bottom: 2px; }
+        .test-week-banner p { font-size: 0.8rem; color: #666; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .circuit-badge { background: #e3f2fd; color: #1976d2; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+        .info-steps { padding-left: 20px; margin: 10px 0; }
+        .info-steps li { margin-bottom: 8px; color: #555; line-height: 1.4; }
+        .info-tip { background: #fff3e0; padding: 10px; border-radius: 8px; font-size: 0.85rem; color: #e65100; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💪 Julio Fitness</h1>
+        <div class="date" id="currentDate"></div>
+        <div class="week-indicator" id="weekIndicator"></div>
+    </div>
+    <div class="view active" id="todayView">
+        <div class="container">
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-value" id="monthCount">0</div><div class="stat-label">Este Mes</div></div>
+                <div class="stat-box"><div class="stat-value" id="streakCount">0</div><div class="stat-label">Racha Actual</div></div>
+            </div>
+            <div id="todayContent"></div>
+            <div class="bike-link" id="bikeBtn">🚴 Registrar paseo en bicicleta</div>
+        </div>
+    </div>
+    <div class="view" id="historyView">
+        <div class="container">
+            <div class="records-row">
+                <div class="record-box"><div class="record-value" id="longestStreak">0</div><div class="record-label">🔥 Mejor Racha</div></div>
+                <div class="record-box"><div class="record-value" id="bestMonth">0</div><div class="record-label">🏆 Mejor Mes</div></div>
+            </div>
+            <div class="card"><div class="card-title">Este Mes</div><div class="calendar" id="calendar"></div></div>
+            <div class="card"><div class="card-title">Actividad Reciente</div><div id="historyList"></div></div>
+        </div>
+    </div>
+    <div class="view" id="prsView">
+        <div class="container">
+            <div class="card"><div class="card-title">Récords Personales 🏆</div><div id="prsList"></div></div>
+            <div class="card"><div class="card-title">Paseos en Bicicleta 🚴</div><div id="bikeStats"></div></div>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" data-view="today"><div class="nav-item-icon">🏋️</div><div>Hoy</div></div>
+        <div class="nav-item" data-view="history"><div class="nav-item-icon">📅</div><div>Historial</div></div>
+        <div class="nav-item" data-view="prs"><div class="nav-item-icon">🏆</div><div>Récords</div></div>
+    </div>
+    <div class="modal-overlay" id="bikeModal">
+        <div class="modal">
+            <h3>🚴 Registrar Paseo</h3>
+            <div class="modal-input-group"><label>Distancia (km)</label><input type="number" id="bikeDistance" placeholder="0" step="0.1" inputmode="decimal"></div>
+            <div class="modal-input-group"><label>Tiempo (minutos)</label><input type="number" id="bikeTime" placeholder="0" inputmode="numeric"></div>
+            <div class="modal-buttons"><button class="modal-btn cancel" id="bikeCancelBtn">Cancelar</button><button class="modal-btn confirm" id="bikeSaveBtn">Guardar</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="celebrationModal">
+        <div class="modal celebration">
+            <div class="celebration-icon">💪</div>
+            <h3 id="celebrationTitle">¡Excelente Trabajo, Julio!</h3>
+            <p id="celebrationMessage"></p>
+            <div class="modal-buttons"><button class="modal-btn confirm" id="celebrationCloseBtn">Continuar</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal">
+            <h3 id="infoTitle">Ejercicio</h3>
+            <div id="infoContent"></div>
+            <div class="modal-buttons"><button class="modal-btn confirm full" id="infoCloseBtn">Entendido</button></div>
+        </div>
+    </div>
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxCB5u6_1o5z55tJYM7Bixm8mhbS7LAWcPd4JgKC3_VPMMZKqPaP2AWwS7XHnhW8FpGgw/exec';
+        
+        const EXERCISE_INFO = {
+            floor_press: { name: 'Press de Piso', steps: ['Acuéstate boca arriba en la colchoneta con las rodillas dobladas y los pies apoyados en el piso', 'Sostén las mancuernas sobre tu pecho con los brazos extendidos', 'Baja las pesas hasta que tus brazos toquen el piso', 'Empuja hacia arriba hasta la posición inicial'], tip: 'Mantén el abdomen apretado y la espalda plana contra el piso' },
+            overhead_press: { name: 'Press de Hombros', steps: ['Párate con los pies al ancho de los hombros', 'Sostén las mancuernas a la altura de los hombros, palmas hacia adelante', 'Empuja las pesas hacia arriba hasta que los brazos estén completamente extendidos', 'Baja a los hombros con control'], tip: 'Mantén el abdomen firme - no arquees la espalda' },
+            push_press: { name: 'Press con Impulso', steps: ['Párate con los pies al ancho de los hombros, mancuernas en los hombros', 'Dobla ligeramente las rodillas (pequeña flexión)', 'Extiende las piernas explosivamente mientras empujas las pesas hacia arriba', 'Baja las pesas a los hombros'], tip: 'Usa las piernas para ayudar a impulsar el peso hacia arriba' },
+            incline_pushups: { name: 'Flexiones Inclinadas', steps: ['Coloca las manos en una banca o superficie elevada, más anchas que los hombros', 'El cuerpo forma una línea recta de la cabeza a los talones', 'Baja el pecho hacia la banca doblando los codos', 'Empuja hacia arriba a la posición inicial'], tip: 'Cuanto más alta la superficie, más fácil el ejercicio' },
+            regular_pushups: { name: 'Flexiones Normales', steps: ['Comienza en posición de plancha, manos un poco más anchas que los hombros', 'Mantén el cuerpo en línea recta de la cabeza a los talones', 'Baja el pecho hacia el piso doblando los codos', 'Empuja hacia arriba a la posición inicial'], tip: 'Mantén el abdomen apretado durante todo el movimiento' },
+            diamond_pushups: { name: 'Flexiones Diamante', steps: ['Comienza en posición de flexión con las manos juntas, formando un diamante con los pulgares e índices', 'Baja el pecho hacia las manos', 'Empuja hacia arriba a la posición inicial'], tip: 'Esto trabaja más los tríceps que las flexiones normales' },
+            close_grip_pushups: { name: 'Flexiones con Agarre Cerrado', steps: ['Comienza en posición de flexión con las manos más juntas que el ancho de los hombros', 'Mantén los codos cerca del cuerpo mientras bajas', 'Baja el pecho hacia el piso', 'Empuja hacia arriba'], tip: 'Mantén los codos pegados a los costados' },
+            decline_pushup: { name: 'Flexiones Declinadas', steps: ['Coloca los pies en una banca o superficie elevada', 'Manos en el piso, un poco más anchas que los hombros', 'Baja el pecho hacia el piso', 'Empuja hacia arriba a la posición inicial'], tip: 'Esto hace las flexiones más difíciles al poner más peso en los brazos' },
+            tricep_kickbacks: { name: 'Patada de Tríceps', steps: ['Inclínate hacia adelante en las caderas, espalda plana, una mano en la banca para apoyo', 'Sostén la mancuerna con el brazo superior paralelo al piso, codo doblado 90°', 'Extiende el brazo hacia atrás, apretando el tríceps', 'Baja a 90° con control'], tip: 'Mantén el brazo superior quieto - solo se mueve el antebrazo' },
+            overhead_tricep_ext: { name: 'Extensión de Tríceps sobre Cabeza', steps: ['Párate o siéntate, sostén una mancuerna con ambas manos sobre la cabeza', 'Mantén los brazos cerca de las orejas', 'Baja el peso detrás de la cabeza doblando los codos', 'Extiende los brazos hacia arriba a la posición inicial'], tip: 'Mantén los codos apuntando hacia adelante, no hacia afuera' },
+            plank_hold: { name: 'Plancha', steps: ['Comienza en antebrazos y puntas de los pies, codos bajo los hombros', 'Mantén el cuerpo en línea recta de la cabeza a los talones', 'Activa el abdomen - imagina jalar el ombligo hacia la columna', 'Mantén esta posición, respirando constantemente'], tip: 'No dejes que las caderas se hundan o se levanten' },
+            bent_over_rows: { name: 'Remo Inclinado', steps: ['Inclínate hacia adelante en las caderas, espalda plana, ligera flexión en las rodillas', 'Deja que las mancuernas cuelguen hacia abajo', 'Jala las pesas hacia las caderas, apretando los omóplatos', 'Baja con control'], tip: 'Piensa en jalar con los codos, no con las manos' },
+            renegade_rows: { name: 'Remo Renegado', steps: ['Comienza en posición de flexión sosteniendo mancuernas', 'Mantén el abdomen apretado y las caderas niveladas', 'Rema una mancuerna hacia la cadera mientras te equilibras en la otra', 'Baja y repite del otro lado'], tip: 'Mantén las caderas cuadradas al piso - no rotes' },
+            single_arm_row: { name: 'Remo con Un Brazo', steps: ['Coloca una mano y una rodilla en la banca para apoyo', 'Sostén la mancuerna en la mano libre, brazo colgando recto', 'Jala el peso hacia la cadera, codo cerca del cuerpo', 'Baja con control'], tip: 'Mantén la espalda plana y el abdomen activado' },
+            bent_over_row_circuit: { name: 'Remo Inclinado', steps: ['Inclínate hacia adelante en las caderas, espalda plana, ligera flexión en las rodillas', 'Deja que las mancuernas cuelguen hacia abajo', 'Jala las pesas hacia las caderas, apretando los omóplatos', 'Baja con control'], tip: 'Piensa en jalar con los codos, no con las manos' },
+            reverse_flys: { name: 'Aperturas Inversas', steps: ['Inclínate hacia adelante en las caderas, espalda plana, ligera flexión en las rodillas', 'Deja que las mancuernas cuelguen, palmas enfrentadas', 'Levanta los brazos hacia los lados hasta estar paralelos al piso, apretando los omóplatos', 'Baja con control'], tip: 'Usa peso ligero - este ejercicio es más difícil de lo que parece' },
+            farmers_carry: { name: 'Caminata del Granjero', steps: ['Sostén una mancuerna pesada en cada mano a los lados', 'Párate erguido con los hombros hacia atrás y el abdomen activado', 'Camina hacia adelante con pasos controlados', 'Mantén la postura erguida durante todo el ejercicio'], tip: 'Camina como si equilibraras un libro en la cabeza' },
+            farmers_carry_circuit: { name: 'Caminata del Granjero', steps: ['Sostén una mancuerna pesada en cada mano a los lados', 'Párate erguido con los hombros hacia atrás y el abdomen activado', 'Camina hacia adelante con pasos controlados', 'Mantén la postura erguida durante todo el ejercicio'], tip: 'Camina como si equilibraras un libro en la cabeza' },
+            farmers_carry_test: { name: 'Caminata del Granjero - PRUEBA MÁXIMA', steps: ['Usa las pesas más pesadas que puedas cargar', 'Sostén las mancuernas a los lados', 'Camina 40 metros manteniendo buena postura', 'Registra el peso que completaste exitosamente'], tip: 'Esto prueba tu fuerza de agarre y estabilidad del abdomen' },
+            suitcase_carry: { name: 'Caminata de Maleta', steps: ['Sostén una mancuerna en una mano a tu lado', 'Párate erguido - no te inclines hacia el peso', 'Camina hacia adelante manteniendo el cuerpo recto', 'Cambia de mano para la siguiente serie'], tip: 'Resiste la inclinación - mantén los hombros nivelados' },
+            suitcase_carry_circuit: { name: 'Caminata de Maleta', steps: ['Sostén una mancuerna en una mano a tu lado', 'Párate erguido - no te inclines hacia el peso', 'Camina hacia adelante manteniendo el cuerpo recto', 'Cambia de mano para la siguiente serie'], tip: 'Resiste la inclinación - mantén los hombros nivelados' },
+            waiter_carry: { name: 'Caminata de Mesero', steps: ['Sostén la mancuerna sobre la cabeza con una mano, brazo completamente extendido', 'Mantén el bíceps cerca de la oreja', 'Camina hacia adelante manteniendo el peso estable', 'Cambia de mano para la siguiente serie'], tip: 'Mantén el abdomen apretado y no dejes que las costillas se abran' },
+            overhead_carry: { name: 'Caminata con Peso Arriba', steps: ['Empuja las mancuernas sobre la cabeza, brazos completamente extendidos', 'Bloquea los codos y activa el abdomen', 'Camina hacia adelante manteniendo las pesas estables', 'Mantén las costillas abajo, no abiertas'], tip: 'Comienza con peso ligero hasta que te sientas estable' },
+            bicep_curls: { name: 'Curl de Bíceps', steps: ['Párate con las mancuernas a los lados, palmas hacia adelante', 'Mantén los codos cerca del cuerpo', 'Levanta las pesas hacia los hombros', 'Baja con control - no balancees'], tip: 'Controla el peso al bajar - ahí es donde ocurre el crecimiento' },
+            hammer_curls: { name: 'Curl Martillo', steps: ['Párate con las mancuernas a los lados, palmas enfrentadas', 'Mantén los codos cerca del cuerpo', 'Levanta las pesas hacia los hombros, manteniendo el agarre neutro', 'Baja con control'], tip: 'Este agarre trabaja más los antebrazos que los curls normales' },
+            dead_hang: { name: 'Colgado', steps: ['Agarra una barra con ambas manos, al ancho de los hombros', 'Deja que tu cuerpo cuelgue con los brazos completamente extendidos', 'Relaja los hombros y respira normalmente', 'Mantén el mayor tiempo posible'], tip: 'Excelente para fuerza de agarre y salud de los hombros - ¡usa la barra del parque!' },
+            arnold_press: { name: 'Press Arnold', steps: ['Comienza con las mancuernas a la altura de los hombros, palmas hacia ti', 'Mientras empujas hacia arriba, rota las palmas hacia adelante', 'Extiende completamente los brazos sobre la cabeza', 'Invierte el movimiento al bajar'], tip: 'Nombrado en honor a Arnold Schwarzenegger - la rotación trabaja todas las partes del hombro' },
+            front_raise: { name: 'Elevación Frontal', steps: ['Párate sosteniendo las mancuernas frente a tus muslos, palmas hacia atrás', 'Mantén los brazos rectos y levanta las pesas a la altura de los hombros', 'Pausa brevemente en la parte superior', 'Baja con control'], tip: 'Usa peso ligero - mantén el movimiento controlado' },
+            bird_dog: { name: 'Perro-Pájaro', steps: ['Comienza en cuatro puntos, muñecas bajo los hombros, rodillas bajo las caderas', 'Extiende el brazo derecho hacia adelante y la pierna izquierda hacia atrás simultáneamente', 'Mantén la espalda plana y las caderas niveladas', 'Regresa al inicio y cambia de lado'], tip: 'Muévete lentamente - el desafío es el equilibrio y el control' },
+            dead_bug: { name: 'Bicho Muerto', steps: ['Acuéstate boca arriba con los brazos extendidos hacia el techo, rodillas dobladas 90°', 'Presiona la espalda baja contra el piso', 'Baja lentamente el brazo y pierna opuestos hacia el piso', 'Regresa al inicio y cambia de lado'], tip: 'La espalda baja debe permanecer presionada al piso durante todo el ejercicio' },
+            plank_shoulder_taps: { name: 'Plancha con Toques', steps: ['Comienza en posición de flexión, manos bajo los hombros', 'Mantén el abdomen apretado y las caderas quietas', 'Levanta una mano para tocar el hombro opuesto', 'Regresa la mano y repite del otro lado'], tip: 'No dejes que las caderas se balanceen de lado a lado' },
+            goblet_squat: { name: 'Sentadilla Copa', steps: ['Sostén la mancuerna verticalmente contra el pecho, agarrando la parte superior', 'Párate con los pies un poco más anchos que los hombros', 'Baja en sentadilla, manteniendo el pecho arriba y el peso en los talones', 'Sube, apretando los glúteos arriba'], tip: 'Empuja las rodillas hacia afuera - no dejes que se junten' },
+            pushup: { name: 'Flexión', steps: ['Comienza en posición de plancha, manos un poco más anchas que los hombros', 'Mantén el cuerpo en línea recta de la cabeza a los talones', 'Baja el pecho hacia el piso doblando los codos', 'Empuja hacia arriba a la posición inicial'], tip: 'Mantén el abdomen apretado durante todo el movimiento' },
+            plank_to_pushup: { name: 'Plancha a Flexión', steps: ['Comienza en posición de plancha en antebrazos', 'Sube a la mano derecha, luego a la izquierda a posición de flexión', 'Baja al antebrazo derecho, luego al izquierdo', 'Alterna qué mano lidera cada repetición'], tip: 'Mantén las caderas lo más quietas posible' },
+            mountain_climbers: { name: 'Escaladores', steps: ['Comienza en posición de flexión', 'Lleva la rodilla derecha hacia el pecho', 'Cambia rápidamente, extendiendo la pierna derecha mientras llevas la izquierda', 'Continúa alternando a ritmo rápido'], tip: 'Mantén las caderas abajo y el abdomen activado' },
+            floor_press_test: { name: 'Press de Piso - PRUEBA MÁXIMA', steps: ['Calienta primero con pesos ligeros', 'Encuentra el peso más pesado que puedas levantar exactamente 10 repeticiones con buena forma', 'Descansa 2-3 minutos entre intentos', 'Registra tu mejor peso'], tip: 'La buena forma importa - no sacrifiques la forma por más peso' },
+            pushup_test: { name: 'Flexiones - PRUEBA MÁXIMA', steps: ['Ponte en posición correcta de flexión', 'Haz tantas flexiones como sea posible con buena forma', 'Rango completo de movimiento - pecho cerca del piso, brazos completamente extendidos', 'Para cuando la forma se deteriore'], tip: 'Mantén un ritmo constante - comienza fuerte pero estable' },
+            row_test: { name: 'Remo - PRUEBA MÁXIMA', steps: ['Calienta primero con pesos ligeros', 'Encuentra el peso más pesado que puedas remar 10 buenas repeticiones por brazo', 'Descansa 2-3 minutos entre intentos', 'Registra tu mejor peso'], tip: 'Mantén la espalda plana durante todo el ejercicio' },
+            plank_test: { name: 'Plancha - PRUEBA MÁXIMA', steps: ['Ponte en posición correcta de plancha en antebrazos', 'Mantén el mayor tiempo posible con buena forma', 'Mantén el cuerpo en línea recta - sin hundir o levantar las caderas', 'Para cuando la forma se deteriore'], tip: 'Respira de manera constante durante todo el ejercicio' },
+            rest_thursday: { name: 'Recuperación Activa', steps: ['Estiramientos suaves por 5-10 minutos', 'Enfócate en las áreas tensas', 'Opcional: caminata suave'], tip: '¡La recuperación es cuando tus músculos se fortalecen!' },
+            celebration_circuit: { name: 'Circuito de Celebración', steps: ['Escoge tus 3-4 ejercicios favoritos del programa', 'Hazlos a un ritmo ligero y agradable', '¡Celebra completar otro ciclo de 8 semanas!'], tip: 'Te lo has ganado - ¡disfrútalo!' },
+            review: { name: 'Revisa Tu Progreso', steps: ['Ve a la pestaña de Récords', 'Compara tus números con hace 8 semanas', '¡Celebra tus mejoras!'], tip: 'El progreso es progreso, sin importar cuán pequeño' }
+        };
+
+        const WORKOUTS = {
+            weekA: {
+                tuesday: {
+                    morning: [
+                        { id: 'floor_press', name: 'Press de Piso', sets: '3x10-12', trackWeight: true, trackReps: true },
+                        { id: 'overhead_press', name: 'Press de Hombros', sets: '3x10-12', trackWeight: true, trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'incline_pushups', name: 'Flexiones Inclinadas', sets: '3x10-15', trackReps: true },
+                        { id: 'tricep_kickbacks', name: 'Patada de Tríceps', sets: '2x12 c/lado', trackWeight: true, trackReps: true },
+                        { id: 'plank_hold', name: 'Plancha', sets: '2x30 seg', trackTime: true }
+                    ]
+                },
+                wednesday: {
+                    morning: [
+                        { id: 'bent_over_rows', name: 'Remo Inclinado', sets: '3x10-12 c/lado', trackWeight: true, trackReps: true },
+                        { id: 'reverse_flys', name: 'Aperturas Inversas', sets: '3x12', trackWeight: true, trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'farmers_carry', name: 'Caminata del Granjero', sets: '3x40m', trackWeight: true },
+                        { id: 'bicep_curls', name: 'Curl de Bíceps', sets: '2x12', trackWeight: true, trackReps: true },
+                        { id: 'dead_hang', name: 'Colgado', sets: '2x20-30 seg', trackTime: true }
+                    ]
+                },
+                thursday: {
+                    morning: [
+                        { id: 'arnold_press', name: 'Press Arnold', sets: '3x10-12', trackWeight: true, trackReps: true },
+                        { id: 'diamond_pushups', name: 'Flexiones Diamante', sets: '3x8-12', trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'suitcase_carry', name: 'Caminata de Maleta', sets: '3x30m c/lado', trackWeight: true },
+                        { id: 'bird_dog', name: 'Perro-Pájaro', sets: '2x10 c/lado', trackReps: true },
+                        { id: 'dead_bug', name: 'Bicho Muerto', sets: '2x10 c/lado', trackReps: true }
+                    ]
+                },
+                friday: {
+                    morning: [
+                        { id: 'goblet_squat', name: 'Sentadilla Copa', sets: '3 rondas x 10', trackWeight: true, trackReps: true, isCircuit: true },
+                        { id: 'pushup', name: 'Flexión', sets: '3 rondas x 8-10', trackReps: true, isCircuit: true },
+                        { id: 'bent_over_row_circuit', name: 'Remo Inclinado', sets: '3 rondas x 10 c/lado', trackWeight: true, trackReps: true, isCircuit: true }
+                    ],
+                    afternoon: [
+                        { id: 'farmers_carry_circuit', name: 'Caminata del Granjero', sets: '3 rondas x 40m', trackWeight: true, isCircuit: true },
+                        { id: 'overhead_carry', name: 'Caminata con Peso Arriba', sets: '3 rondas x 30m', trackWeight: true, isCircuit: true },
+                        { id: 'plank_to_pushup', name: 'Plancha a Flexión', sets: '3 rondas x 8', trackReps: true, isCircuit: true }
+                    ]
+                }
+            },
+            weekB: {
+                tuesday: {
+                    morning: [
+                        { id: 'floor_press', name: 'Press de Piso', sets: '3x10-12', trackWeight: true, trackReps: true },
+                        { id: 'push_press', name: 'Press con Impulso', sets: '3x10-12', trackWeight: true, trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'regular_pushups', name: 'Flexiones Normales', sets: '3x10-15', trackReps: true },
+                        { id: 'overhead_tricep_ext', name: 'Extensión de Tríceps', sets: '2x12', trackWeight: true, trackReps: true },
+                        { id: 'plank_hold', name: 'Plancha', sets: '2x30 seg', trackTime: true }
+                    ]
+                },
+                wednesday: {
+                    morning: [
+                        { id: 'renegade_rows', name: 'Remo Renegado', sets: '3x8-10 c/lado', trackWeight: true, trackReps: true },
+                        { id: 'reverse_flys', name: 'Aperturas Inversas', sets: '3x12', trackWeight: true, trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'farmers_carry', name: 'Caminata del Granjero', sets: '3x40m', trackWeight: true },
+                        { id: 'hammer_curls', name: 'Curl Martillo', sets: '2x12', trackWeight: true, trackReps: true },
+                        { id: 'dead_hang', name: 'Colgado', sets: '2x20-30 seg', trackTime: true }
+                    ]
+                },
+                thursday: {
+                    morning: [
+                        { id: 'front_raise', name: 'Elevación Frontal', sets: '3x12', trackWeight: true, trackReps: true },
+                        { id: 'close_grip_pushups', name: 'Flexiones Agarre Cerrado', sets: '3x8-12', trackReps: true }
+                    ],
+                    afternoon: [
+                        { id: 'waiter_carry', name: 'Caminata de Mesero', sets: '3x30m c/lado', trackWeight: true },
+                        { id: 'plank_shoulder_taps', name: 'Plancha con Toques', sets: '2x10 c/lado', trackReps: true },
+                        { id: 'dead_bug', name: 'Bicho Muerto', sets: '2x10 c/lado', trackReps: true }
+                    ]
+                },
+                friday: {
+                    morning: [
+                        { id: 'goblet_squat', name: 'Sentadilla Copa', sets: '3 rondas x 10', trackWeight: true, trackReps: true, isCircuit: true },
+                        { id: 'decline_pushup', name: 'Flexiones Declinadas', sets: '3 rondas x 8-10', trackReps: true, isCircuit: true },
+                        { id: 'single_arm_row', name: 'Remo con Un Brazo', sets: '3 rondas x 10 c/lado', trackWeight: true, trackReps: true, isCircuit: true }
+                    ],
+                    afternoon: [
+                        { id: 'suitcase_carry_circuit', name: 'Caminata de Maleta', sets: '3 rondas x 40m c/lado', trackWeight: true, isCircuit: true },
+                        { id: 'overhead_carry', name: 'Caminata con Peso Arriba', sets: '3 rondas x 30m', trackWeight: true, isCircuit: true },
+                        { id: 'mountain_climbers', name: 'Escaladores', sets: '3 rondas x 20', trackReps: true, isCircuit: true }
+                    ]
+                }
+            },
+            testWeek: {
+                tuesday: {
+                    morning: [{ id: 'floor_press_test', name: 'Press de Piso - PRUEBA', sets: 'Peso máx x 10 reps', trackWeight: true, trackReps: true, isTest: true }],
+                    afternoon: [{ id: 'pushup_test', name: 'Flexiones - PRUEBA', sets: 'Máx reps en una serie', trackReps: true, isTest: true }]
+                },
+                wednesday: {
+                    morning: [{ id: 'row_test', name: 'Remo - PRUEBA', sets: 'Peso máx x 10 reps', trackWeight: true, trackReps: true, isTest: true }],
+                    afternoon: [{ id: 'farmers_carry_test', name: 'Caminata Granjero - PRUEBA', sets: 'Peso máx x 40m', trackWeight: true, isTest: true }]
+                },
+                thursday: {
+                    morning: [{ id: 'plank_test', name: 'Plancha - PRUEBA', sets: 'Tiempo máximo', trackTime: true, isTest: true }],
+                    afternoon: [{ id: 'rest_thursday', name: 'Recuperación Activa', sets: 'Estiramientos suaves', isRest: true }]
+                },
+                friday: {
+                    morning: [{ id: 'celebration_circuit', name: 'Circuito de Celebración', sets: '¡Tus ejercicios favoritos!', isRest: true }],
+                    afternoon: [{ id: 'review', name: '¡Revisa Tu Progreso!', sets: 'Ve a la pestaña Récords', isRest: true }]
+                }
+            }
+        };
+
+        const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const DAYS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        const MOTIVATIONAL_MESSAGES = [
+            "¡Cada repetición te acerca a jugar con tus nietos sin límites!",
+            "Cuerpo fuerte, espíritu fuerte. ¡Estás construyendo ambos, Julio!",
+            "Otro entrenamiento completado - ¡te estás fortaleciendo cada día!",
+            "Tu dedicación es inspiradora. ¡Sigue apareciendo!",
+            "Fitness funcional para una vida funcional - ¡excelente trabajo!",
+            "¡Estás invirtiendo en años de vida activa y saludable!",
+            "¡La fuerza construida hoy te sirve por décadas!",
+            "La consistencia es la clave, ¡y tú la tienes, Julio!"
+        ];
+
+        let appData = { workouts: [], bikeRides: [], prs: {}, startDate: null, longestStreak: 0, bestMonth: { count: 0, month: '' } };
+        let currentSession = 'morning';
+
+        function getDisplayDay() { return DAYS[new Date().getDay()]; }
+        function getDayKey() { return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]; }
+        function getWeekNumber() { if (!appData.startDate) return 1; const start = new Date(appData.startDate); const now = new Date(); return Math.floor(Math.abs(now - start) / (1000 * 60 * 60 * 24 * 7)) + 1; }
+        function isTestWeek() { const week = getWeekNumber(); return week > 0 && week % 8 === 0; }
+        function getCurrentWeekType() { if (isTestWeek()) return 'testWeek'; return getWeekNumber() % 2 === 1 ? 'weekA' : 'weekB'; }
+        
+        function formatDate(date) {
+            const day = DAYS[date.getDay()];
+            const dayNum = date.getDate();
+            const month = MONTHS[date.getMonth()];
+            return day.charAt(0).toUpperCase() + day.slice(1) + ', ' + dayNum + ' de ' + month;
+        }
+        
+        function getLastPerformance(exerciseId) {
+            const workouts = appData.workouts.filter(w => w.exercises && w.exercises.some(e => e.id === exerciseId)).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (workouts.length === 0) return null;
+            return workouts[0].exercises.find(e => e.id === exerciseId);
+        }
+        
+        function checkForPR(exerciseId, value, type) {
+            const currentPR = appData.prs[exerciseId];
+            if (!currentPR || !currentPR[type] || value > currentPR[type].value) {
+                if (!appData.prs[exerciseId]) appData.prs[exerciseId] = {};
+                appData.prs[exerciseId][type] = { value: value, date: new Date().toISOString() };
+                return true;
+            }
+            return false;
+        }
+        
+        function calculateStreak() {
+            const workoutDates = appData.workouts.map(w => new Date(w.date).toDateString()).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => new Date(b) - new Date(a));
+            if (workoutDates.length === 0) return 0;
+            let streak = 0;
+            let checkDate = new Date();
+            checkDate.setHours(0, 0, 0, 0);
+            while ([0, 1, 6].includes(checkDate.getDay())) checkDate.setDate(checkDate.getDate() - 1);
+            for (let i = 0; i < 365; i++) {
+                const dateStr = checkDate.toDateString();
+                const dow = checkDate.getDay();
+                if ([0, 1, 6].includes(dow)) { checkDate.setDate(checkDate.getDate() - 1); continue; }
+                if (workoutDates.includes(dateStr)) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
+                else if (dateStr === new Date().toDateString()) { checkDate.setDate(checkDate.getDate() - 1); continue; }
+                else break;
+            }
+            if (streak > (appData.longestStreak || 0)) { appData.longestStreak = streak; saveData(); }
+            return streak;
+        }
+        
+        function getMonthWorkoutCount() {
+            const now = new Date();
+            const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const count = appData.workouts.filter(w => new Date(w.date) >= firstOfMonth).length;
+            if (count > (appData.bestMonth?.count || 0)) { appData.bestMonth = { count: count, month: now.getFullYear() + '-' + now.getMonth() }; saveData(); }
+            return count;
+        }
+
+        function showExerciseInfo(exerciseId) {
+            const info = EXERCISE_INFO[exerciseId];
+            if (!info) return;
+            document.getElementById('infoTitle').textContent = info.name;
+            let content = '<ol class="info-steps">';
+            info.steps.forEach(step => { content += '<li>' + step + '</li>'; });
+            content += '</ol>';
+            if (info.tip) { content += '<div class="info-tip">💡 ' + info.tip + '</div>'; }
+            document.getElementById('infoContent').innerHTML = content;
+            document.getElementById('infoModal').classList.add('show');
+        }
+
+        async function loadData() {
+            const stored = localStorage.getItem('julioFitness');
+            if (stored) appData = JSON.parse(stored);
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getData');
+                const data = await response.json();
+                if (data.success && data.data) { appData = { ...appData, ...data.data }; localStorage.setItem('julioFitness', JSON.stringify(appData)); }
+            } catch (e) { console.log('Usando almacenamiento local'); }
+            render();
+        }
+
+        async function saveData() {
+            localStorage.setItem('julioFitness', JSON.stringify(appData));
+            try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveData', data: appData }) }); } catch (e) {}
+        }
+
+        function render() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = formatDate(now);
+            const weekType = getCurrentWeekType();
+            const weekNum = getWeekNumber();
+            document.getElementById('weekIndicator').textContent = isTestWeek() ? 'Semana ' + weekNum + ' • SEMANA DE PRUEBA 💪' : 'Semana ' + weekNum + ' • ' + (weekType === 'weekA' ? 'Programa A' : 'Programa B');
+            document.getElementById('monthCount').textContent = getMonthWorkoutCount();
+            document.getElementById('streakCount').textContent = calculateStreak();
+            renderTodayContent(getDayKey());
+            renderHistory();
+            renderPRs();
+        }
+
+        function renderTodayContent(dayOfWeek) {
+            const container = document.getElementById('todayContent');
+            if (['sunday', 'monday', 'saturday'].includes(dayOfWeek)) {
+                const icon = dayOfWeek === 'saturday' ? '🚴' : '😴';
+                const msg = dayOfWeek === 'saturday' ? "¡Disfruta tu paseo en bicicleta hoy, Julio! Tus músculos se están recuperando y fortaleciendo." : "El descanso es cuando tus músculos se fortalecen. ¡Disfruta tu día libre, Julio!";
+                container.innerHTML = '<div class="card rest-day"><div class="rest-day-icon">' + icon + '</div><h2>Día de Descanso</h2><p>' + msg + '</p></div>';
+                return;
+            }
+            const weekType = getCurrentWeekType();
+            const todayWorkout = WORKOUTS[weekType][dayOfWeek];
+            if (!todayWorkout) { container.innerHTML = '<div class="card"><p>No hay entrenamiento programado.</p></div>'; return; }
+            
+            let testBanner = isTestWeek() ? '<div class="test-week-banner"><h3>🎯 Semana de Prueba</h3><p>¡Mide tu progreso! Da tu mejor esfuerzo.</p></div>' : '';
+            const exercises = todayWorkout[currentSession] || [];
+            const isCircuit = exercises.some(e => e.isCircuit);
+            
+            let exerciseHTML = exercises.map(ex => {
+                const lastPerf = getLastPerformance(ex.id);
+                let lastPerfText = '';
+                if (lastPerf) {
+                    const parts = [];
+                    if (lastPerf.weight) parts.push(lastPerf.weight + ' lbs');
+                    if (lastPerf.reps) parts.push(lastPerf.reps + ' reps');
+                    if (lastPerf.time) parts.push(lastPerf.time + ' seg');
+                    if (parts.length > 0) lastPerfText = 'Última vez: ' + parts.join(' × ');
+                }
+                let inputsHTML = '';
+                if (!ex.isRest) {
+                    inputsHTML = '<div class="exercise-inputs">';
+                    if (ex.trackWeight) inputsHTML += '<div class="input-group"><input type="number" id="weight_' + ex.id + '" placeholder="0" min="0" inputmode="decimal"><label>lbs</label></div>';
+                    if (ex.trackReps) inputsHTML += '<div class="input-group"><input type="number" id="reps_' + ex.id + '" placeholder="0" min="0" inputmode="numeric"><label>reps</label></div>';
+                    if (ex.trackTime) inputsHTML += '<div class="input-group"><input type="number" id="time_' + ex.id + '" placeholder="0" min="0" inputmode="numeric"><label>seg</label></div>';
+                    inputsHTML += '<button class="exercise-complete" data-id="' + ex.id + '"></button></div>';
+                }
+                return '<div class="exercise" data-id="' + ex.id + '"><div class="exercise-header"><div class="exercise-name-row"><span class="exercise-name">' + ex.name + '</span><button class="info-btn" data-exercise="' + ex.id + '">i</button></div><span class="exercise-sets">' + ex.sets + '</span></div>' + (lastPerfText ? '<div class="exercise-last">' + lastPerfText + '</div>' : '') + inputsHTML + '</div>';
+            }).join('');
+
+            container.innerHTML = testBanner + '<div class="session-toggle"><button class="session-btn ' + (currentSession === 'morning' ? 'active' : '') + '" data-session="morning">☀️ Mañana</button><button class="session-btn ' + (currentSession === 'afternoon' ? 'active' : '') + '" data-session="afternoon">🌤️ Tarde</button></div><div class="card"><div class="card-title">Sesión de ' + (currentSession === 'morning' ? 'Mañana' : 'Tarde') + (isCircuit ? '<span class="circuit-badge">Circuito</span>' : '') + '</div>' + exerciseHTML + '</div><button class="finish-btn" id="finishBtn">Completar Sesión ✓</button>';
+
+            document.querySelectorAll('.session-btn').forEach(btn => btn.addEventListener('click', () => { currentSession = btn.dataset.session; render(); }));
+            document.querySelectorAll('.exercise-complete').forEach(btn => btn.addEventListener('click', () => btn.classList.toggle('done')));
+            document.querySelectorAll('.info-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); showExerciseInfo(btn.dataset.exercise); }));
+            document.getElementById('finishBtn').addEventListener('click', finishSession);
+        }
+
+        function renderHistory() {
+            document.getElementById('longestStreak').textContent = appData.longestStreak || 0;
+            document.getElementById('bestMonth').textContent = appData.bestMonth?.count || 0;
+            const calendar = document.getElementById('calendar');
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            let calendarHTML = ['D','L','M','M','J','V','S'].map(d => '<div class="calendar-header">' + d + '</div>').join('');
+            for (let i = 0; i < firstDay.getDay(); i++) calendarHTML += '<div class="calendar-day empty"></div>';
+            const workoutDates = appData.workouts.map(w => new Date(w.date).toDateString());
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(now.getFullYear(), now.getMonth(), day);
+                const dateStr = date.toDateString();
+                const isToday = dateStr === now.toDateString();
+                const hasWorkout = workoutDates.includes(dateStr);
+                const dow = date.getDay();
+                const isWorkoutDay = dow >= 2 && dow <= 5;
+                const isPast = date < now && !isToday;
+                const isMissed = isPast && isWorkoutDay && !hasWorkout;
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (hasWorkout) classes += ' completed';
+                else if (isMissed) classes += ' missed';
+                calendarHTML += '<div class="' + classes + '">' + day + '</div>';
+            }
+            calendar.innerHTML = calendarHTML;
+            
+            const historyList = document.getElementById('historyList');
+            const allActivity = [...appData.workouts.map(w => ({...w, type:'workout'})), ...(appData.bikeRides||[]).map(r => ({...r, type:'bike'}))].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,10);
+            if (allActivity.length === 0) { historyList.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Sin actividad aún. ¡Comienza hoy!</p>'; return; }
+            historyList.innerHTML = allActivity.map(item => {
+                const date = new Date(item.date);
+                const dateStr = date.getDate() + ' ' + MONTHS[date.getMonth()].substring(0,3);
+                if (item.type === 'bike') return '<div class="history-item"><div><div class="history-date">' + dateStr + '</div><div class="history-detail">Bici: ' + (item.distance||0) + 'km, ' + (item.time||0) + 'min</div></div><div class="history-status">🚴</div></div>';
+                return '<div class="history-item"><div><div class="history-date">' + dateStr + '</div><div class="history-detail">' + (item.session === 'morning' ? 'Mañana' : 'Tarde') + ' • ' + (item.exercises?.length||0) + ' ejercicios</div></div><div class="history-status">' + (item.missed ? '😔' : '✅') + '</div></div>';
+            }).join('');
+        }
+
+        function renderPRs() {
+            const prsList = document.getElementById('prsList');
+            const prs = Object.entries(appData.prs);
+            if (prs.length === 0) { prsList.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">¡Completa entrenamientos para establecer tus primeros récords!</p>'; }
+            else {
+                prsList.innerHTML = prs.map(([exerciseId, records]) => {
+                    const parts = [];
+                    if (records.weight) parts.push(records.weight.value + ' lbs');
+                    if (records.reps) parts.push(records.reps.value + ' reps');
+                    if (records.time) parts.push(records.time.value + ' seg');
+                    const latestDate = Object.values(records).map(r => new Date(r.date)).sort((a,b) => b-a)[0];
+                    const info = EXERCISE_INFO[exerciseId];
+                    const displayName = info ? info.name : exerciseId.replace(/_/g, ' ');
+                    return '<div class="pr-item"><div><div class="pr-exercise">' + displayName + '</div><div class="pr-date">' + latestDate.getDate() + ' ' + MONTHS[latestDate.getMonth()].substring(0,3) + '</div></div><div class="pr-value">' + parts.join(' × ') + '</div></div>';
+                }).join('');
+            }
+            const bikeStats = document.getElementById('bikeStats');
+            const rides = appData.bikeRides || [];
+            if (rides.length === 0) { bikeStats.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Sin paseos registrados aún.</p>'; }
+            else {
+                const totalDist = rides.reduce((s,r) => s + (r.distance||0), 0);
+                const totalTime = rides.reduce((s,r) => s + (r.time||0), 0);
+                const longest = Math.max(...rides.map(r => r.distance||0));
+                bikeStats.innerHTML = '<div class="pr-item"><div class="pr-exercise">Distancia Total</div><div class="pr-value">' + totalDist.toFixed(1) + ' km</div></div><div class="pr-item"><div class="pr-exercise">Tiempo Total</div><div class="pr-value">' + Math.round(totalTime) + ' min</div></div><div class="pr-item"><div class="pr-exercise">Paseo Más Largo</div><div class="pr-value">' + longest.toFixed(1) + ' km</div></div><div class="pr-item"><div class="pr-exercise">Total de Paseos</div><div class="pr-value">' + rides.length + '</div></div>';
+            }
+        }
+
+        function finishSession() {
+            const exercises = [];
+            let newPRs = [];
+            document.querySelectorAll('.exercise').forEach(el => {
+                const id = el.dataset.id;
+                if (!id) return;
+                const exerciseData = { id };
+                const weightInput = document.getElementById('weight_' + id);
+                const repsInput = document.getElementById('reps_' + id);
+                const timeInput = document.getElementById('time_' + id);
+                if (weightInput && weightInput.value) { exerciseData.weight = parseFloat(weightInput.value); if (checkForPR(id, exerciseData.weight, 'weight')) newPRs.push(id); }
+                if (repsInput && repsInput.value) { exerciseData.reps = parseInt(repsInput.value); if (checkForPR(id, exerciseData.reps, 'reps')) newPRs.push(id); }
+                if (timeInput && timeInput.value) { exerciseData.time = parseInt(timeInput.value); if (checkForPR(id, exerciseData.time, 'time')) newPRs.push(id); }
+                exercises.push(exerciseData);
+            });
+            appData.workouts.push({ date: new Date().toISOString(), day: getDayKey(), session: currentSession, weekType: getCurrentWeekType(), exercises });
+            saveData();
+            const msg = [...new Set(newPRs)].length > 0 ? '¡Nuevo Récord! 🎉\n\n' + MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)] : MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)];
+            document.getElementById('celebrationMessage').textContent = msg;
+            document.getElementById('celebrationModal').classList.add('show');
+            render();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!appData.startDate) appData.startDate = new Date().toISOString();
+            loadData();
+            document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(item.dataset.view + 'View').classList.add('active');
+            }));
+            document.getElementById('bikeBtn').addEventListener('click', () => document.getElementById('bikeModal').classList.add('show'));
+            document.getElementById('bikeCancelBtn').addEventListener('click', () => document.getElementById('bikeModal').classList.remove('show'));
+            document.getElementById('bikeSaveBtn').addEventListener('click', () => {
+                const distance = parseFloat(document.getElementById('bikeDistance').value) || 0;
+                const time = parseInt(document.getElementById('bikeTime').value) || 0;
+                if (distance > 0 || time > 0) { if (!appData.bikeRides) appData.bikeRides = []; appData.bikeRides.push({ date: new Date().toISOString(), distance, time }); saveData(); render(); }
+                document.getElementById('bikeDistance').value = '';
+                document.getElementById('bikeTime').value = '';
+                document.getElementById('bikeModal').classList.remove('show');
+            });
+            document.getElementById('celebrationCloseBtn').addEventListener('click', () => document.getElementById('celebrationModal').classList.remove('show'));
+            document.getElementById('infoCloseBtn').addEventListener('click', () => document.getElementById('infoModal').classList.remove('show'));
+        });
+    </script>
+</body>
+</html>
